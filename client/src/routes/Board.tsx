@@ -1,5 +1,3 @@
-import clsx from "clsx"
-
 import Piece from "../components/boardAssets/Piece"
 import { useState } from "react"
 
