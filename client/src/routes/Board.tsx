@@ -20,7 +20,8 @@ export default function Board() {
         
         buff.push({
           occupiedBy: isPieceAllowed ? (row < 3 ? "dark" : row > 4 ? "white" : "none") : "none",
-          color: isPieceAllowed ? "bg-zinc-900" : "bg-zinc-100"
+          color: isPieceAllowed ? "bg-zinc-900" : "bg-zinc-100",
+          isKing: false
         })
       }
       fields.push(buff)
@@ -35,13 +36,20 @@ export default function Board() {
     // fields[4][6].occupiedBy = "white"
     fields[5][7].occupiedBy = "none"
     fields[0][2].occupiedBy = "none"
-
+    
+    // fields[1][3].occupiedBy = "white"
     fields[1][3].occupiedBy = "none"
+    fields[6][4].occupiedBy = "none"
+    fields[0][0].occupiedBy = "none"
+    fields[1][1].occupiedBy = "dark"
+    fields[2][2].occupiedBy = "none"
+    fields[3][3].occupiedBy = "dark"
 
     return fields
   }
 
   const [fields, setFields] = useState(generateFields())
+  const [whosTurn, setWhosTurn] = useState("white")
   const [activePiece, setActivePiece] = useState<[number, number] | null>(null)
   
   const clearActiveFields = (updateState?: boolean) => {
@@ -231,8 +239,166 @@ export default function Board() {
     setActivePiece([row, col])
   }
 
+  const handlePieceClick2 = (nRow: number, nCol: number) => {
+    if (!activePiece) {
+      const x = highlightAvailableMoves(nRow, nCol, fields)
+      setFields(x)
+      setActivePiece([nRow, nCol])
+    } if (activePiece && fields[nRow][nCol].active) {
+      const delta = Math.abs(nRow-activePiece[0])
+      const calcPos = (w: number, f: number, i: number) => w-(w-f)/Math.abs((w-f))*i
+      for (let i=1; i<delta; i++) {
+        if (fields[calcPos(activePiece[0], nRow, i)][calcPos(activePiece[1], nCol, i)].occupiedBy !== fields[activePiece[0]][activePiece[1]].occupiedBy) {
+          fields[calcPos(activePiece[0], nRow, i)][calcPos(activePiece[1], nCol, i)].occupiedBy = "none"
+        }
+      }
+      const buff = fields[nRow][nCol]
+      fields[nRow][nCol] = fields[activePiece[0]][activePiece[1]]
+      fields[activePiece[0]][activePiece[1]] = buff
+      if (nRow === 0 || nRow === 7) fields[nRow][nCol].isKing = true
+      setFields([...fields])
+      setActivePiece(null)
+      clearActiveFields(true)
+    }
+    
+  }
+
+  // function is not pure, it depends on fields state
+  const highlightAvailableMoves = (nRow: number, nCol: number, fields__: Field[][]): Field[][] => {
+    const fields_ = [...fields__]
+    const mainField = fields[nRow][nCol]
+    mainField.isKing && mainField.occupiedBy === "white" 
+
+    // const isDirectionEnabled = [true, true, true, true] // [tl, tr, bl, br]
+    
+
+    const isDirectionEnabled = [
+      mainField.isKing || mainField.occupiedBy === "white", 
+      mainField.isKing || mainField.occupiedBy === "white", 
+      mainField.isKing || mainField.occupiedBy === "dark", 
+      mainField.isKing || mainField.occupiedBy === "dark"
+    ] // [tl, tr, bl, br]
+
+    const setFieldActive = (row: number, col: number): undefined => {
+      fields_[row][col].active = true
+      return undefined
+    }
+
+    const checkIsActiveAlready = (field: Field | undefined): undefined | Field => {
+      return field ? (field.active ? undefined : field) : undefined 
+    }
+
+    const checkExistanceAndNone = (row: number, col: number) => {
+      return !!(fields_[row] && fields_[row][col] && fields_[row][col].occupiedBy === "none")
+    }
+
+    for (let i=1; i<(mainField.isKing ? 8 : 2); i++) {
+      let tl: Field | undefined = isDirectionEnabled[0] ? fields_[nRow - i] && fields_[nRow - i][nCol - i] : undefined
+      let tr: Field | undefined = isDirectionEnabled[1] ? fields_[nRow - i] && fields_[nRow - i][nCol + i] : undefined
+      let bl: Field | undefined = isDirectionEnabled[2] ? fields_[nRow + i] && fields_[nRow + i][nCol - i] : undefined
+      let br: Field | undefined = isDirectionEnabled[3] ? fields_[nRow + i] && fields_[nRow + i][nCol + i] : undefined
+
+      tl = checkIsActiveAlready(tl)
+      tr = checkIsActiveAlready(tr)
+      bl = checkIsActiveAlready(bl)
+      br = checkIsActiveAlready(br)
+
+      // if field empty
+      if (tl && tl.occupiedBy === "none") tl = setFieldActive(nRow - i, nCol - i)
+      if (tr && tr.occupiedBy === "none") tr = setFieldActive(nRow - i, nCol + i)
+      if (bl && bl.occupiedBy === "none") bl = setFieldActive(nRow + i, nCol - i)
+      if (br && br.occupiedBy === "none") br = setFieldActive(nRow + i, nCol + i)
+
+      // if same color
+      if (tl && tl.occupiedBy === mainField.occupiedBy) {tl = undefined; isDirectionEnabled[0] = false} // same color
+      if (tr && tr.occupiedBy === mainField.occupiedBy) {tr = undefined; isDirectionEnabled[1] = false}
+      if (bl && bl.occupiedBy === mainField.occupiedBy) {bl = undefined; isDirectionEnabled[2] = false}
+      if (br && br.occupiedBy === mainField.occupiedBy) {br = undefined; isDirectionEnabled[3] = false}
+
+
+
+      if (
+        i === 1 &&
+        fields_[nRow-i] && 
+        fields_[nRow-i][nCol-i] &&
+        fields_[nRow-i][nCol-i].occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow-i][nCol-i].occupiedBy !== "none" &&
+        fields_[nRow-i-1] && 
+        fields_[nRow-i-1][nCol-i-1] && 
+        fields_[nRow-i-1][nCol-i-1].occupiedBy === "none"
+      ) tl = setFieldActive(nRow - i-1, nCol - i-1)
+      if (
+        i === 1 &&
+        fields_[nRow - i] && 
+        fields_[nRow - i][nCol + i] && 
+        fields_[nRow - i][nCol + i].occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow - i][nCol + i].occupiedBy !== "none" &&
+        fields_[nRow-i-1] && 
+        fields_[nRow-i-1][nCol+i+1] && 
+        fields_[nRow-i-1][nCol+i+1].occupiedBy === "none"
+      ) tr = setFieldActive(nRow - i-1, nCol + i+1)
+      if (
+        i === 1 &&
+        fields_[nRow + i] && 
+        fields_[nRow + i][nCol - i] && 
+        fields_[nRow + i][nCol - i].occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow + i][nCol - i].occupiedBy !== "none" &&
+        fields_[nRow+i+1] && 
+        fields_[nRow+i+1][nCol-i-1] && 
+        fields_[nRow+i+1][nCol-i-1].occupiedBy === "none"
+      ) bl = setFieldActive(nRow + i+1, nCol - i-1)
+      if (
+        i === 1 &&
+        fields_[nRow+i] && 
+        fields_[nRow+i][nCol+i] &&
+        fields_[nRow+i][nCol+i].occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow+i][nCol+i].occupiedBy !== "none" &&
+        fields_[nRow+i+1] && 
+        fields_[nRow+i+1][nCol+i+1] && 
+        fields_[nRow+i+1][nCol+i+1].occupiedBy === "none"
+      ) br = setFieldActive(nRow + i+1, nCol + i+1)
+
+
+
+      if (
+        tl &&
+        tl.occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow-i-1] && 
+        fields_[nRow-i-1][nCol-i-1] && 
+        fields_[nRow-i-1][nCol-i-1].occupiedBy !== "none"
+      ) {tl = undefined; isDirectionEnabled[0] = false}
+      if (
+        tr &&
+        tr.occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow-i-1] && 
+        fields_[nRow-i-1][nCol+i+1] && 
+        fields_[nRow-i-1][nCol+i+1].occupiedBy !== "none"
+      ) {tr = undefined; isDirectionEnabled[1] = false}
+      if (
+        bl &&
+        bl.occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow+i+1] && 
+        fields_[nRow+i+1][nCol-i-1] && 
+        fields_[nRow+i+1][nCol-i-1].occupiedBy !== "none"
+      ) {bl = undefined; isDirectionEnabled[2] = false}
+      if (
+        br &&
+        br.occupiedBy !== mainField.occupiedBy &&
+        fields_[nRow+i+1] && 
+        fields_[nRow+i+1][nCol+i+1] && 
+        fields_[nRow+i+1][nCol+i+1].occupiedBy !== "none"
+      ) {br = undefined; isDirectionEnabled[3] = false}
+
+      // if (tl && tl.occupiedBy !== fields_[nRow][nCol].occupiedBy && checkExistanceAndNone(-i-1, -i-1)) tl = setFieldActive(nRow - i-1, nCol - i-1)
+      // if (tr && tr.occupiedBy !== fields_[nRow][nCol].occupiedBy && checkExistanceAndNone(-i-1, i+1)) tr = setFieldActive(nRow - i-1, nCol + i+1)
+      // if (bl && bl.occupiedBy !== fields_[nRow][nCol].occupiedBy && checkExistanceAndNone(i+1, -i-1)) bl = setFieldActive(nRow + i+1, nCol - i-1)
+      // if (br && br.occupiedBy !== fields_[nRow][nCol].occupiedBy && checkExistanceAndNone(i+1, i+1)) br = setFieldActive(nRow + i+1, nCol + i+1)
+    }
+    return fields_
+  }
   
   return (
+    <>
     <div className="min-w-[256px] w-[90vw] max-w-[90vh]">
       <div 
         className="bg-rose-600 aspect-square rounded-lg w-full max-w-[800px] grid grid-rows-8 grid-cols-8 flex-wrap p-4" >
@@ -242,7 +408,7 @@ export default function Board() {
 
               return (
                 <div 
-                  onClick={() => handlePieceClick(nRow, nCol)} 
+                  onClick={() => handlePieceClick2(nRow, nCol)} 
                   key={nRow + nCol} 
                   className={`flex justify-center items-center relative ${field.color}`}
                 >
@@ -261,6 +427,8 @@ export default function Board() {
           })}
       </div>
     </div>
+    <button onClick={() => setFields(generateFields())}>Restart stuff</button>
+    </>
   )
 }
 

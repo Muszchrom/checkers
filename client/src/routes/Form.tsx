@@ -35,7 +35,7 @@ export default function Form() {
       else if (x < 0.66) toast.error("Server error")
       else {
         toast.success("Connected to the game")
-        navigate('/game', {replace: true})
+        // navigate('/game', {replace: true})
       }
       setIsLoading(false)
     }, 2000)
@@ -52,7 +52,7 @@ export default function Form() {
   const onCreateGameSubmit: SubmitHandler<FieldValues> = (data) => {
     // create new game
     data && data
-    fakeBehavior()
+    navigate('/game', {replace: true})
   }
 
   return (
