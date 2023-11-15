@@ -99,10 +99,6 @@ export default function Board() {
       return field ? (field.active ? undefined : field) : undefined 
     }
 
-    const checkExistanceAndNone = (row: number, col: number) => {
-      return !!(fields_[row] && fields_[row][col] && fields_[row][col].occupiedBy === "none")
-    }
-
     setFieldActive(nRow, nCol)
 
     for (let i=1; i<(mainField.isKing ? 8 : 2); i++) {
