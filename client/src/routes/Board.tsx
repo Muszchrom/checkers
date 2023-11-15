@@ -27,29 +27,11 @@ export default function Board() {
       fields.push(buff)
       buff = []
     }
-
-    // temp movement simulation
-    fields[3][5].occupiedBy = "dark"
-    fields[2][4].occupiedBy = "none"
-    fields[2][4].occupiedBy = "white"
-    // fields[2][4].isKing = true
-    // fields[4][6].occupiedBy = "white"
-    fields[5][7].occupiedBy = "none"
-    fields[0][2].occupiedBy = "none"
-    
-    // fields[1][3].occupiedBy = "white"
-    fields[1][3].occupiedBy = "none"
-    fields[6][4].occupiedBy = "none"
-    fields[0][0].occupiedBy = "none"
-    fields[1][1].occupiedBy = "dark"
-    fields[2][2].occupiedBy = "none"
-    fields[3][3].occupiedBy = "dark"
-
     return fields
   }
 
   const [fields, setFields] = useState(generateFields())
-  const [whosTurn, setWhosTurn] = useState("white")
+  const [whosTurn, setWhosTurn] = useState<"white" | "dark">("white")
   const [activePiece, setActivePiece] = useState<[number, number] | null>(null)
   
   const clearActiveFields = (updateState?: boolean) => {
@@ -64,198 +46,27 @@ export default function Board() {
     }
   }
 
-  const handlePieceClick = (row: number, col: number) => {
-    // Move logic
-    if (fields[row][col].active) {
-      if (!activePiece) return // this should never happend
-
-      // if delta = 1 player wants to only move
-      const delta = Math.abs(row-activePiece[0])
-
-      const calcPos = (w: number, f: number, i: number) => w-(w-f)/Math.abs((w-f))*i
-      for (let i=1; i<delta; i++) {
-        if (fields[calcPos(activePiece[0], row, i)][calcPos(activePiece[1], col, i)].occupiedBy === "dark") {
-          fields[calcPos(activePiece[0], row, i)][calcPos(activePiece[1], col, i)].occupiedBy = "none"
-        }
-      }
-      fields[row][col].occupiedBy = "white"
-      fields[row][col].isKing = fields[activePiece[0]][activePiece[1]].isKing
-      fields[activePiece[0]][activePiece[1]].occupiedBy = "none"
-      fields[activePiece[0]][activePiece[1]].isKing = false
-      if (row === 0) fields[row][col].isKing = true
-      clearActiveFields()
-      setFields([...fields])
-      setActivePiece(null)
-      return
-    }
-
-    // disable highlight when clicked field is not occupied by white Piece
-    if (fields[row][col].occupiedBy !== "white") return clearActiveFields(true)
-    if (activePiece) clearActiveFields(true)
-
-    // set clicked Piece to white
-    fields[row][col].active = true
-
-
-    // Normal Piece logic
-    // white Piece is clicked
-    if (!fields[row][col].isKing) {
-      // if row above exist
-      if (fields[row-1]) {
-        // check if field above to the left exist
-        if (fields[row-1][col-1]) {
-          // if field is empty, highlight it
-          if (fields[row-1][col-1].occupiedBy === "none") { 
-            fields[row-1][col-1].active = true
-          }
-          // if field is occupied by enemy and the next one is empty
-          else if (
-            fields[row-2] &&
-            fields[row-1][col-1].occupiedBy === "dark" &&
-            fields[row-2][col-2]?.occupiedBy === "none"
-          ) {
-            fields[row-2][col-2].active = true
-          }
-        }
-        // check if fields above to the right exist
-        if (fields[row-1][col+1]) {
-          // if field is empty, highlight it
-          if (fields[row-1][col+1].occupiedBy === "none") {
-            fields[row-1][col+1].active = true
-          }
-          // if field is occupied by enemy
-          else if (
-            fields[row-2] && 
-            fields[row-1][col+1].occupiedBy === "dark" && 
-            fields[row-2][col+2]?.occupiedBy === "none"
-          ) {
-            // if the next field diagonaly placed to the current active Piece and enemey Piece is empty 
-            fields[row-2][col+2].active = true
-          }
-        }
-      } 
-
-      // if row below exist
-      // since you can only move to the top 
-      // only hop over mechanic is implemented
-      if (fields[row+1] && fields[row+2]) {
-        // check if you can hop over
-        if (fields[row+1][col-1]?.occupiedBy === "dark" && fields[row+2][col-2]?.occupiedBy === "none") {
-          fields[row+2][col-2].active = true
-        }
-        if (fields[row+1][col+1]?.occupiedBy === "dark" && fields[row+2][col+2]?.occupiedBy === "none") {
-          fields[row+2][col+2].active = true
-        }
-      }
-    } else {
-      let tl = true
-      let tr = true
-      let bl = true
-      let br = true
-      for (let i=1; i < 8; i++) {
-        
-        if (!fields[row-i]) {
-          tl = false 
-          tr = false
-        }
-        if (!fields[row+i]) {
-          bl = false 
-          br = false
-        }
-        if (!fields[0][col-i]) {
-          tl = false
-          bl = false
-        }
-        if (!fields[0][col+i]) {
-          tr = false
-          br = false
-        }
-        if (!(tl || tr || bl || br)) break 
-
-        if (tl) {
-          if (!fields[row-i][col-i]) tl = false
-          else if (fields[row-i][col-i].occupiedBy === "none") fields[row-i][col-i].active = true
-          else if (
-            fields[row-(i+1)] && 
-            fields[row-(i+1)][col-(i+1)] &&
-            fields[row-i][col-i].occupiedBy === "dark" &&
-            fields[row-(i+1)][col-(i+1)].occupiedBy === "none" 
-          ) {
-            fields[row-(i+1)][col-(i+1)].active = true
-          } else {
-            tl = false
-          }
-        }
-
-        if (tr) {
-          if (!fields[row-i][col+i]) tr = false
-          else if (fields[row-i][col+i].occupiedBy === "none") fields[row-i][col+i].active = true
-          else if (
-            fields[row-(i+1)] &&
-            fields[row-(i+1)][col+(i+1)] &&
-            fields[row-i][col+i].occupiedBy === "dark" &&
-            fields[row-(i+1)][col+(i+1)].occupiedBy === "none"
-          ) {
-            fields[row-(i+1)][col+(i+1)].active = true
-          } else {
-            tr = false
-          }
-        }
-
-        if (bl) {
-          if (!fields[row+i][col-i]) bl = false
-          else if (fields[row+i][col-i].occupiedBy === "none") fields[row+i][col-i].active = true
-          else if (
-            fields[row+(i+1)] && 
-            fields[row+(i+1)][col-(i+1)] &&
-            fields[row+i][col-i].occupiedBy === "dark" &&
-            fields[row+(i+1)][col-(i+1)].occupiedBy === "none" 
-          ) {
-            fields[row+(i+1)][col-(i+1)].active = true
-          } else {
-            bl = false
-          }
-        }
-
-        if (br) {
-          if (!fields[row+i][col+i]) br = false
-          else if (fields[row+i][col+i].occupiedBy === "none") fields[row+i][col+i].active = true
-          else if (
-            fields[row+(i+1)] &&
-            fields[row+(i+1)][col+(i+1)] &&
-            fields[row+i][col+i].occupiedBy === "dark" &&
-            fields[row+(i+1)][col+(i+1)].occupiedBy === "none"
-          ) {
-            fields[row+(i+1)][col+(i+1)].active = true
-          } else {
-            br = false
-          }
-        }
-      }
-    }
-    // King Piece logic
-
-    setFields([...fields])
-    setActivePiece([row, col])
-  }
-
   const handlePieceClick2 = (nRow: number, nCol: number) => {
     if (!activePiece) {
-      const x = highlightAvailableMoves(nRow, nCol, fields)
-      setFields(x)
+      if (fields[nRow][nCol].occupiedBy !== whosTurn) return
+      setFields(highlightAvailableMoves(nRow, nCol, fields))
       setActivePiece([nRow, nCol])
     } if (activePiece && fields[nRow][nCol].active) {
       const delta = Math.abs(nRow-activePiece[0])
       const calcPos = (w: number, f: number, i: number) => w-(w-f)/Math.abs((w-f))*i
+      let setTurn: "white" | "dark" = whosTurn === "white" ? "dark" : "white"
+      if (delta === 0) return clearActiveFields(true)
       for (let i=1; i<delta; i++) {
         if (fields[calcPos(activePiece[0], nRow, i)][calcPos(activePiece[1], nCol, i)].occupiedBy !== fields[activePiece[0]][activePiece[1]].occupiedBy) {
           fields[calcPos(activePiece[0], nRow, i)][calcPos(activePiece[1], nCol, i)].occupiedBy = "none"
+          setTurn = whosTurn === "white" ? "white" : "dark"
         }
       }
       const buff = fields[nRow][nCol]
       fields[nRow][nCol] = fields[activePiece[0]][activePiece[1]]
       fields[activePiece[0]][activePiece[1]] = buff
       if (nRow === 0 || nRow === 7) fields[nRow][nCol].isKing = true
+      setWhosTurn(setTurn)
       setFields([...fields])
       setActivePiece(null)
       clearActiveFields(true)
@@ -291,6 +102,8 @@ export default function Board() {
     const checkExistanceAndNone = (row: number, col: number) => {
       return !!(fields_[row] && fields_[row][col] && fields_[row][col].occupiedBy === "none")
     }
+
+    setFieldActive(nRow, nCol)
 
     for (let i=1; i<(mainField.isKing ? 8 : 2); i++) {
       let tl: Field | undefined = isDirectionEnabled[0] ? fields_[nRow - i] && fields_[nRow - i][nCol - i] : undefined
@@ -399,7 +212,8 @@ export default function Board() {
   
   return (
     <>
-    <div className="min-w-[256px] w-[90vw] max-w-[90vh]">
+    <h1 className="text-rose-600 text-7xl mb-5">{whosTurn === "white" ? "White" : "Dark"}</h1>
+    <div className="min-w-[256px] w-[90vw] max-w-[90vh] flex justify-center">
       <div 
         className="bg-rose-600 aspect-square rounded-lg w-full max-w-[800px] grid grid-rows-8 grid-cols-8 flex-wrap p-4" >
           {fields.map((rows, nRow) => {
