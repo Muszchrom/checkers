@@ -228,11 +228,11 @@ export default function Board() {
                 >
                   {field.active ?
                     <FieldActive>
-                      {field.occupiedBy !== "none" && (field.occupiedBy === "dark" ? <Piece color="dark"/> : <Piece />) }
+                      {field.occupiedBy !== "none" && (field.occupiedBy === "dark" ? <Piece color="dark" isKing={field.isKing}/> : <Piece isKing={field.isKing}/>) }
                     </FieldActive>
                     : 
                     <>
-                      {field.occupiedBy !== "none" && (field.occupiedBy === "dark" ? <Piece color="dark"/> : <Piece />) }
+                      {field.occupiedBy !== "none" && (field.occupiedBy === "dark" ? <Piece color="dark" isKing={field.isKing}/> : <Piece isKing={field.isKing} />) }
                     </>
                   }
                 </div>
@@ -241,7 +241,23 @@ export default function Board() {
           })}
       </div>
     </div>
-    <button onClick={() => setFields(generateFields())}>Restart stuff</button>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <div className="flex flex-col items-start justify-center gap-5">
+    <button className="bg-rose-600 rounded-md px-4 py-2" onClick={() => setFields(generateFields())}>Restart stuff</button>
+    <button className="bg-rose-600 rounded-md px-4 py-2" onClick={() => setWhosTurn(whosTurn === "dark" ? "white" : "dark")}>Toggle turn</button>
+    </div>
     </>
   )
 }
