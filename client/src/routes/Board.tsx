@@ -38,7 +38,8 @@ export default function Board() {
   const [fields, setFields] = useState<BoardType>(generateFields())  // Board state
   const [whosTurn, setWhosTurn] = useState<"white" | "black">("white")  // tracking turns
   const [activePiece, setActivePiece] = useState<[number, number] | null>(null)  // [row, col] of currently active piece or null, when there's no selected piece
-  
+  const [pieceCounter, setPieceCounter] = useState({white: 12, black: 12})
+
   // set all Field.active to false, optionally update the state 
   const clearActiveFields = (updateState?: boolean): void => {
     for (let i=0; i<8; i++) {
@@ -80,8 +81,12 @@ export default function Board() {
       for (let i=1; i<distance; i++) {
         const row = calcPos(activePiece[0], nRow, i)
         const col = calcPos(activePiece[1], nCol, i)
-        if (fields[row][col].occupiedBy !== fields[activePiece[0]][activePiece[1]].occupiedBy) {
+        if (
+          fields[row][col].occupiedBy !== fields[activePiece[0]][activePiece[1]].occupiedBy &&
+          fields[row][col].occupiedBy !== "none"
+        ) {
           fields[row][col].occupiedBy = "none"
+          fields[row][col].isKing = false
           nextTurn = whosTurn === "white" ? "white" : "black"
         }
       }
