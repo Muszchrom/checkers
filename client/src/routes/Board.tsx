@@ -1,5 +1,8 @@
 import Piece from "../components/boardAssets/Piece"
+import Overlay from "../components/Overlay"
 import { useState } from "react"
+
+import { useNavigate } from "react-router-dom"
 
 export default function Board() {
   // color is replaced by formula 
@@ -39,6 +42,8 @@ export default function Board() {
   const [whosTurn, setWhosTurn] = useState<"white" | "black">("white")  // tracking turns
   const [activePiece, setActivePiece] = useState<[number, number] | null>(null)  // [row, col] of currently active piece or null, when there's no selected piece
   const [pieceCounter, setPieceCounter] = useState({white: 12, black: 12})
+
+  const navigate = useNavigate()
 
   // set all Field.active to false, optionally update the state 
   const clearActiveFields = (updateState?: boolean): void => {
@@ -242,54 +247,52 @@ export default function Board() {
     }
     return fields_
   }
+
+  const restart = () => {
+    setFields(generateFields())
+    setWhosTurn("white")
+    setActivePiece(null)
+    setPieceCounter({white: 12, black: 12})
+  }
   
   return (
     <>
+    {(!pieceCounter.black || !pieceCounter.white) && (
+      <Overlay buttonText="Powrót" buttonAction={() => navigate("/")} buttonText2="Zagraj jeszcze raz" buttonAction2={() => restart()}>
+        {pieceCounter.black ? "Przegrałeś!" : "Wygrałeś!"}
+      </Overlay>
+    )}
+
     <h1 className="text-rose-600 text-7xl mb-5">{whosTurn === "white" ? "White" : "Dark"}</h1>
     <div className="min-w-[256px] w-[90vw] max-w-[90vh] flex justify-center">
       <div 
         className="bg-rose-600 aspect-square rounded-lg w-full max-w-[800px] grid grid-rows-8 grid-cols-8 flex-wrap p-4" >
           {fields.map((rows, nRow) => {
             return rows.map((field, nCol) => {
-              // check if player wants to move then check if current field is the clicked field
-
               return (
                 <div 
                   onClick={() => handlePieceClick2(nRow, nCol)} 
                   key={nRow + nCol} 
                   className={`flex justify-center items-center relative ${(nRow + nCol) % 2 === 1 ? "bg-zinc-100" : "bg-zinc-900"}`}
                 >
-                  {field.active ?
+                  {field.active ? (
                     <FieldActive>
-                      {field.occupiedBy !== "none" && (field.occupiedBy === "black" ? <Piece color="dark" isKing={field.isKing}/> : <Piece isKing={field.isKing}/>) }
+                      {field.occupiedBy !== "none" && (
+                        field.occupiedBy === "black" ? <Piece color="dark" isKing={field.isKing}/> : <Piece isKing={field.isKing}/>
+                      )}
                     </FieldActive>
-                    : 
+                  ) : (
                     <>
-                      {field.occupiedBy !== "none" && (field.occupiedBy === "black" ? <Piece color="dark" isKing={field.isKing}/> : <Piece isKing={field.isKing} />) }
+                      {field.occupiedBy !== "none" && (
+                        field.occupiedBy === "black" ? <Piece color="dark" isKing={field.isKing}/> : <Piece isKing={field.isKing} />
+                      )}
                     </>
-                  }
+                  )}
                 </div>
               )
             })
           })}
       </div>
-    </div>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <br/>
-    <div className="flex flex-col items-start justify-center gap-5">
-    <button className="bg-rose-600 rounded-md px-4 py-2" onClick={() => setFields(generateFields())}>Restart stuff</button>
-    <button className="bg-rose-600 rounded-md px-4 py-2" onClick={() => setWhosTurn(whosTurn === "black" ? "white" : "black")}>Toggle turn</button>
     </div>
     </>
   )
