@@ -11,7 +11,12 @@ import { useNavigate } from 'react-router-dom'
 
 import Input from "../components/Input"
 
-export default function Form() {
+interface FormProps {
+  uname: string
+  setUname: (str: string) => void
+}
+
+const Form: React.FC<FormProps> = ({uname, setUname}) => {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const {
@@ -22,7 +27,7 @@ export default function Form() {
     }
   } = useForm<FieldValues>({
     defaultValues: {
-      username: "",
+      username: uname,
       gameid: "",
     }
   })
@@ -35,7 +40,7 @@ export default function Form() {
       else if (x < 0.66) toast.error("Server error")
       else {
         toast.success("Connected to the game")
-        navigate('/game', {replace: true})
+        // navigate('/game', {replace: true})
       }
       setIsLoading(false)
     }, 2000)
@@ -45,14 +50,16 @@ export default function Form() {
     // connect to the game
     // btw you can style toast 
     // https://react-hot-toast.com/docs/toast
+    setUname(data.username)
     data && data // disavle that fkin TS undreline
     fakeBehavior()    
   }
 
   const onCreateGameSubmit: SubmitHandler<FieldValues> = (data) => {
     // create new game
+    setUname(data.username)
     data && data
-    fakeBehavior()
+    navigate('/game', {replace: true})
   }
 
   return (
@@ -117,3 +124,4 @@ export default function Form() {
   )
 }
 
+export default Form
