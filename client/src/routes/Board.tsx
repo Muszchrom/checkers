@@ -87,7 +87,13 @@ export default function Board() {
         ) {
           fields[row][col].occupiedBy = "none"
           fields[row][col].isKing = false
-          nextTurn = whosTurn === "white" ? "white" : "black"
+          if (whosTurn === "white") {
+            pieceCounter.black -= 1
+            nextTurn = "white"
+          } else {
+            pieceCounter.white -= 1
+            nextTurn = "black"
+          }
         }
       }
 
@@ -105,6 +111,7 @@ export default function Board() {
       setFields([...fields])
       setActivePiece(null)
       clearActiveFields(true)
+      setPieceCounter({...pieceCounter})
     }
     
   }
